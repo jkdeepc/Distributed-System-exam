@@ -1,25 +1,27 @@
+import type { SNSEvent } from "aws-lambda";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 
+const sqsClient = new SQSClient({ region: process.env.REGION });
+const queueBUrl = process.env.QUEUE_B_URL!;
 
-import { Handler } from "aws-lambda";
+export const handler = async (event: SNSEvent): Promise<void> => {
+  console.log("Event:", JSON.stringify(event));
 
-export const handler: Handler = async (event, context) => {
-  try {
+  for (const record of event.Records) {
     
-    console.log("Event: ", JSON.stringify(event));
+    const payload = JSON.parse(record.Sns.Message);
+    console.log("Lambda Y received SNS message:", payload);
 
     
-    for (const record of event.Records) {
+    if (!payload.email) {
+      console.log("No email field – forwarding to QueueB:", payload);
+      await sqsClient.send(new SendMessageCommand({
+        QueueUrl: queueBUrl,
+        MessageBody: record.Sns.Message,
+      }));
+    } else {
       
-      const message = record.Sns.Message;
-      console.log("Lambda Y received SNS message:", message);
-
-      
+      console.log("Has email, skipping QueueB");
     }
-
-    
-  } catch (error: any) {
-    console.error("Error in Lambda Y:", error);
-    
-    throw new Error(JSON.stringify(error));
   }
 };

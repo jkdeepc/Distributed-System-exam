@@ -102,7 +102,11 @@ export class ExamStack extends cdk.Stack {
 
     const queueA = new sqs.Queue(this, 'QueueA', {
       queueName: 'QueueA',
-      visibilityTimeout: cdk.Duration.seconds(5),
+      visibilityTimeout: cdk.Duration.seconds(15),
+    });
+    const queueB = new sqs.Queue(this, "QueueB", {
+      queueName: "QueueB",
+      visibilityTimeout: cdk.Duration.seconds(15),
     });
     topic1.addSubscription(new subs.SqsSubscription(queueA, {
       filterPolicy: {
@@ -138,8 +142,11 @@ export class ExamStack extends cdk.Stack {
       memorySize: 128,
       environment: {
         REGION: "eu-west-1",
+        QUEUE_B_URL: queueB.queueUrl,
       },
     });
+    queueB.grantSendMessages(lambdaYFn);
+
     topic1.addSubscription(new subs.LambdaSubscription(lambdaYFn, {
       filterPolicy: {
         country: sns.SubscriptionFilter.stringFilter({
