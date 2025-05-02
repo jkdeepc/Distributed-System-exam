@@ -99,13 +99,18 @@ export class ExamStack extends cdk.Stack {
       displayName: "topic 1",
     });
     
-    
 
     const queueA = new sqs.Queue(this, 'QueueA', {
       queueName: 'QueueA',
       visibilityTimeout: cdk.Duration.seconds(5),
     });
-    topic1.addSubscription(new subs.SqsSubscription(queueA));
+    topic1.addSubscription(new subs.SqsSubscription(queueA, {
+      filterPolicy: {
+        country: sns.SubscriptionFilter.stringFilter({
+          allowlist: ["Ireland", "China"],
+        }),
+      },
+    }));
 
     const lambdaXFn = new lambdanode.NodejsFunction(this, "LambdaXFn", {
       architecture: lambda.Architecture.ARM_64,
@@ -135,7 +140,13 @@ export class ExamStack extends cdk.Stack {
         REGION: "eu-west-1",
       },
     });
-    topic1.addSubscription(new subs.LambdaSubscription(lambdaYFn));
+    topic1.addSubscription(new subs.LambdaSubscription(lambdaYFn, {
+      filterPolicy: {
+        country: sns.SubscriptionFilter.stringFilter({
+          denylist: ["Ireland", "China"],
+        }),
+      },
+    }));
   }
 }
   
